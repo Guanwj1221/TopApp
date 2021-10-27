@@ -9,6 +9,10 @@ from enum import Enum
 import Keyword_Utility
 import Excel_Utility
 import Thread_Utility
+from mtranslate import translate
+
+google_play_json_dir_path = 'GooglePlay/JsonData'
+google_play_dir_path = 'GooglePlay'
 
 
 # 判断获取json数据的结果
@@ -31,17 +35,17 @@ def get_json_result(file_name):
     return json_data
 
 
-# 获取App的评论数据的json数据
+# Reviews API: 获取App的评论数据的json数据
 # app_id: App ID，必填
-# lang: 语言，默认为 'en'
-# country: 国家，默认为 'us'
-# sort: 排序方式，默认为 Sort.NEWEST
-# num: 评论数量，默认100
+# lang: 语言
+# country: 国家
+# sort: 排序方式
+# num: 评论数量
 def get_app_reviews_json(app_id, lang, country, sort, num):
     ctx = execjs.compile("""
     var gplay = require('google-play-scraper')
     var fs = require("fs")
-    function reviews(app_id, lang, country, sort, num) {
+    function reviews(app_id, lang, country, sort, num, file_name) {
         gplay.reviews({
         appId: app_id,
         lang: lang,
@@ -50,7 +54,7 @@ def get_app_reviews_json(app_id, lang, country, sort, num):
         num: num
         })
         .then((body) => {
-            fs.writeFile('GooglePlay/JsonData/' + app_id + 'Reviews.json', JSON.stringify(body), (err) => {
+            fs.writeFile(file_name, JSON.stringify(body), (err) => {
                 if (err) {
                     console.error(err)
                     return
@@ -59,36 +63,37 @@ def get_app_reviews_json(app_id, lang, country, sort, num):
         })
     }
     """)
-    ctx.call("reviews", app_id, lang, country, sort, num)
-    json_data = get_json_result(file_name='GooglePlay/JsonData/' + app_id + 'Reviews.json')
+    file_name = google_play_json_dir_path + '/' + app_id + 'Reviews.json'
+    ctx.call("reviews", app_id, lang, country, sort, num, file_name)
+    json_data = get_json_result(file_name=file_name)
 
     return json_data
 
 
-# 获取App排行和App详情的json数据
-# collection: Google Play 榜单，默认为 Collection.TOP_FREE
+# List API: 获取App排行和App详情的json数据
+# collection: Google Play 榜单
 # category: App 种类，默认无
-# num: App数量，默认 500
-# lang: 语言，默认为 'en'
-# country: 国家，默认为 'us'
-def get_app_list_json(category, collection, num, lang, country, fullDetail):
-    if fullDetail:
+# num: App数量
+# lang: 语言
+# country: 国家
+def get_app_list_json(category, collection, num, lang, country, full_detail):
+    if full_detail:
         print("开始获取Google Play App Name And ID数据")
     else:
         print("开始获取Google Play App排行数据")
     ctx = execjs.compile("""
     var gplay = require('google-play-scraper')
     var fs = require("fs")
-    function list(category, collection, num, lang, country, fullDetail) {
+    function list(category, collection, num, lang, country, full_detail, file_name) {
         gplay.list({
         category: category,
         collection: collection,
         num: num,
         lang: lang,
         country: country,
-        fullDetail: fullDetail
+        fullDetail: full_detail
         }).then((body) => {
-            fs.writeFile('GooglePlay/JsonData/List.json', JSON.stringify(body), (err) => {
+            fs.writeFile(file_name, JSON.stringify(body), (err) => {
                 if (err) {
                     console.error(err)
                     return
@@ -97,33 +102,34 @@ def get_app_list_json(category, collection, num, lang, country, fullDetail):
         })
     }
     """)
-    ctx.call("list", category, collection, num, lang, country, fullDetail)
-    json_data = get_json_result(file_name='TopApp/GooglePlay/JsonData/List.json')
-    if fullDetail:
+    file_name = google_play_json_dir_path + '/List.json'
+    ctx.call("list", category, collection, num, lang, country, full_detail, file_name)
+    json_data = get_json_result(file_name=file_name)
+    if full_detail:
         print("获取Google Play App Name And ID数据结果：", (json_data != ""))
     else:
         print("获取Google Play App排行数据结果：", (json_data != ""))
     return json_data
 
 
-# 获取与关键词相关的App的json数据
+# Search API: 获取与关键词相关的App的json数据
 # term: 关键词，必须
-# num: App数量，默认 20 最大 250
+# num: App数量
 # lang: 语言，默认为 'en'
 # country: 国家，默认为 'us'
-def get_top_app_json_data(term, num, lang, country):
+def get_search_app_json_data(term, num, lang, country):
     print("开始获取Google Play App排行数据")
     ctx = execjs.compile("""
     var gplay = require('google-play-scraper')
     var fs = require("fs")
-    function search(term, num, lang, country) {
+    function search(term, num, lang, country, file_name) {
         gplay.search({
         term: term,
         num: num,
         lang: lang,
         country: country
         }).then((body) => {
-            fs.writeFile('GooglePlay/JsonData/Search.json', JSON.stringify(body), (err) => {
+            fs.writeFile(file_name, JSON.stringify(body), (err) => {
                 if (err) {
                     console.error(err)
                     return
@@ -132,15 +138,57 @@ def get_top_app_json_data(term, num, lang, country):
         })
     }
     """)
-    ctx.call("search", term, num, lang, country)
+    file_name = google_play_json_dir_path + '/Search.json'
+    ctx.call("search", term, num, lang, country, file_name)
 
-    json_data = get_json_result(file_name='TopApp/GooglePlay/JsonData/Search.json')
+    json_data = get_json_result(file_name=file_name)
     print("获取Google Play App排行数据结果：", (json_data != ""))
     return json_data
 
 
+# App API: 获取与App的json数据
+# term: 关键词，必须
+# lang: 语言
+# country: 国家
+def get_app_json_data(app_id, lang, country):
+    ctx = execjs.compile("""
+    var gplay = require('google-play-scraper')
+    var fs = require("fs")
+    function app(app_id, lang, country, file_name) {
+        gplay.app({
+        appId: app_id,
+        lang: lang,
+        country: country
+        }).then((body) => {
+            fs.writeFile(file_name, JSON.stringify(body), (err) => {
+                if (err) {
+                    console.error(err)
+                    return
+                }
+            })
+        })
+    }
+    """)
+    file_name = google_play_json_dir_path + '/' + app_id + 'App.json'
+    ctx.call("app", app_id, lang, country, file_name)
+
+    json_data = get_json_result(file_name=file_name)
+    return json_data
+
+
+# 获取所有App的名称和ID
+def get_all_app_name_id(json_data):
+    app_names = []
+    app_ids = []
+    for index in range(len(json_data)):
+        app_name, app_id = get_app_name_id(json_data[index])
+        app_names.append(app_name)
+        app_ids.append(app_id)
+    return app_names, app_ids
+
+
 # 获取App的详情
-def get_app_details(json_data):
+def get_app_details_by_json(json_data):
     try:
         app_name = json_data['title']
         app_id = json_data['appId']
@@ -165,6 +213,16 @@ def get_app_details(json_data):
     return details
 
 
+# 获取App的详情
+# app_id
+# lang: 语言
+# country: 国家
+def get_app_details_by_id(app_id, lang, country):
+    json_data = get_app_json_data(app_id, lang, country)
+    details = get_app_details_by_json(json_data)
+    return details
+
+
 # 获取App的名称和ID
 def get_app_name_id(json_data):
     try:
@@ -175,19 +233,7 @@ def get_app_name_id(json_data):
     return app_name, app_id
 
 
-# 获取所有App的名称和ID
-def get_all_app_name_id(category, collection, num, lang, country):
-    json_data = get_app_list_json(category, collection, num, lang, country, False)
-    app_names = []
-    app_ids = []
-    for index in range(len(json_data)):
-        app_name, app_id = get_app_name_id(json_data[index])
-        app_names.append(app_name)
-        app_ids.append(app_id)
-    return app_names, app_ids
-
-
-# 获取所有App的详情
+# 获取榜单所有App的详情
 def get_all_app_details(category, collection, num, lang, country):
     json_data = get_app_list_json(category, collection, num, lang, country, True)
     contents = [['名称', 'ID', '最大安装量', '评分',
@@ -196,7 +242,7 @@ def get_all_app_details(category, collection, num, lang, country):
                  '截图', '关键词']]
 
     for index in range(len(json_data)):
-        details = get_app_details(json_data[index])
+        details = get_app_details_by_json(json_data[index])
         find_string = details[10] + details[11]
         key_words = Keyword_Utility.find_keyword(find_string)
         details.append(key_words)
@@ -205,6 +251,10 @@ def get_all_app_details(category, collection, num, lang, country):
 
 
 # 获取App的评论
+# lang: 语言
+# country: 国家
+# sort: 排序方式
+# num: 评论数量
 def get_app_reviews(app_id, lang, country, sort, num):
     json_data = get_app_reviews_json(app_id, lang, country, sort, num)
     try:
@@ -220,6 +270,9 @@ def get_app_reviews(app_id, lang, country, sort, num):
             score = data_array[i]['score']
             title = data_array[i]['title']
             text = data_array[i]['text']
+            # text_translate = translate(text)
+            # if text_translate is not None:
+            #     text += '\nTranslate：' + text_translate
             date = data_array[i]['date']
             reply_text = data_array[i]['replyText']
             reply_date = data_array[i]['replyDate']
@@ -236,16 +289,17 @@ def get_app_reviews(app_id, lang, country, sort, num):
 
 # 获取App的排行和评论
 # path: Excel表格名称
-# collection: Google Play 榜单，默认为 Collection.TOP_FREE
-# category: App 种类，默认无
-# app_num: App数量，默认 500
-# lang: 语言，默认为 'en'
-# country: 国家，默认为 'us'
+# collection: Google Play 榜单
+# category: App 种类
+# app_num: App数量
+# lang: 语言
+# country: 国家
 # review_num: 评论数量
-def get_app_ranking_reviews(path, category, collection,
-                            app_num, lang, country,
-                            sort, review_num):
-    app_names, app_ids = get_all_app_name_id(category, collection, app_num, lang, country)
+def save_app_list_ranking_reviews(path, category, collection,
+                                  app_num, lang, country,
+                                  sort, reviews_num):
+    json_data = get_app_list_json(category, collection, app_num, lang, country, False)
+    app_names, app_ids = get_all_app_name_id(json_data)
     if len(app_names) == 0 or len(app_ids) == 0:
         print("获取App数据失败")
         return
@@ -255,99 +309,45 @@ def get_app_ranking_reviews(path, category, collection,
 
     print("开始获取Google Play App评论数据")
     app_reviews = Thread_Utility.get_google_play_reviews(
-        get_app_reviews, app_ids, lang, country, sort, review_num)
+        get_app_reviews, app_ids, lang, country, sort, reviews_num)
+
+    content_thread.join()
+    contents = content_thread.get_result()
 
     app_rank_name = []
     for index in range(len(app_names)):
         app_rank_name.append(str(index + 1) + '_' + app_names[index])
 
-    content_thread.join()
-    contents = content_thread.get_result()
-
     print("开始加载Google Play App数据...")
     Excel_Utility.write_content(path, 'AllAppRanking', contents, app_rank_name, app_reviews)
 
 
-# 评论排序枚举
-class Sort(Enum):
-    NEWEST = 2
-    RATING = 3
-    HELPFULNESS = 1
+# 讲搜索的App信息写入表格
+# path：Excel表格路径
+# term：关键词
+# app_num: App数量，默认100
+# reviews_num: 评论数量，默认500
+# lang: 语言，默认为 'en'
+# country: 国家，默认为 'us'
+# sort: 排序方式，默认为 Sort.NEWEST
+def save_search_app_ranking_reviews(path, term, app_num, reviews_num, lang, country, sort):
+    rank = [['名称', 'ID', '最大安装量', '评分',
+             '评分人数', '星级分布', '评论人数', '价格',
+             '类型', '版本号', '摘要', '描述',
+             '截图', '关键词']]
+    json_data = get_search_app_json_data(term, app_num, lang, country)
+    app_names, app_ids = get_all_app_name_id(json_data)
 
+    thread1 = Thread_Utility.MyThread(Thread_Utility.get_google_play_reviews,
+                                      (get_app_reviews, app_ids, lang, country, sort, reviews_num))
+    thread2 = Thread_Utility.MyThread(Thread_Utility.get_google_play_details,
+                                      (get_app_details_by_id, app_ids, lang, country))
+    thread1.start()
+    thread2.start()
+    thread1.join()
+    thread2.join()
+    all_reviews = thread1.result
 
-# 应用榜单枚举
-class Collection(Enum):
-    TOP_FREE = 'topselling_free'
-    TOP_PAID = 'topselling_paid'
-    GROSSING = 'topgrossing'
-    TRENDING = 'movers_shakers'
-    TOP_FREE_GAMES = 'topselling_free_games'
-    TOP_PAID_GAMES = 'topselling_paid_games'
-    TOP_GROSSING_GAMES = 'topselling_grossing_games'
-    NEW_FREE = 'topselling_new_free'
-    NEW_PAID = 'topselling_new_paid'
-    NEW_FREE_GAMES = 'topselling_new_free_games'
-    NEW_PAID_GAMES = 'topselling_new_paid_games'
-
-
-# 应用类型的枚举
-class Category(Enum):
-    APPLICATION = 'APPLICATION'
-    ANDROID_WEAR = 'ANDROID_WEAR'
-    ART_AND_DESIGN = 'ART_AND_DESIGN'
-    AUTO_AND_VEHICLES = 'AUTO_AND_VEHICLES'
-    BEAUTY = 'BEAUTY'
-    BOOKS_AND_REFERENCE = 'BOOKS_AND_REFERENCE'
-    BUSINESS = 'BUSINESS'
-    COMICS = 'COMICS'
-    COMMUNICATION = 'COMMUNICATION'
-    DATING = 'DATING'
-    EDUCATION = 'EDUCATION'
-    ENTERTAINMENT = 'ENTERTAINMENT'
-    EVENTS = 'EVENTS'
-    FINANCE = 'FINANCE'
-    FOOD_AND_DRINK = 'FOOD_AND_DRINK'
-    HEALTH_AND_FITNESS = 'HEALTH_AND_FITNESS'
-    HOUSE_AND_HOME = 'HOUSE_AND_HOME'
-    LIBRARIES_AND_DEMO = 'LIBRARIES_AND_DEMO'
-    LIFESTYLE = 'LIFESTYLE'
-    MAPS_AND_NAVIGATION = 'MAPS_AND_NAVIGATION'
-    MEDICAL = 'MEDICAL'
-    MUSIC_AND_AUDIO = 'MUSIC_AND_AUDIO'
-    NEWS_AND_MAGAZINES = 'NEWS_AND_MAGAZINES'
-    PARENTING = 'PARENTING'
-    PERSONALIZATION = 'PERSONALIZATION'
-    PHOTOGRAPHY = 'PHOTOGRAPHY'
-    PRODUCTIVITY = 'PRODUCTIVITY'
-    SHOPPING = 'SHOPPING'
-    SOCIAL = 'SOCIAL'
-    SPORTS = 'SPORTS'
-    TOOLS = 'TOOLS'
-    TRAVEL_AND_LOCAL = 'TRAVEL_AND_LOCAL'
-    VIDEO_PLAYERS = 'VIDEO_PLAYERS'
-    WEATHER = 'WEATHER'
-    GAME = 'GAME'
-    GAME_ACTION = 'GAME_ACTION'
-    GAME_ADVENTURE = 'GAME_ADVENTURE'
-    GAME_ARCADE = 'GAME_ARCADE'
-    GAME_BOARD = 'GAME_BOARD'
-    GAME_CARD = 'GAME_CARD'
-    GAME_CASINO = 'GAME_CASINO'
-    GAME_CASUAL = 'GAME_CASUAL'
-    GAME_EDUCATIONAL = 'GAME_EDUCATIONAL'
-    GAME_MUSIC = 'GAME_MUSIC'
-    GAME_PUZZLE = 'GAME_PUZZLE'
-    GAME_RACING = 'GAME_RACING'
-    GAME_ROLE_PLAYING = 'GAME_ROLE_PLAYING'
-    GAME_SIMULATION = 'GAME_SIMULATION'
-    GAME_SPORTS = 'GAME_SPORTS'
-    GAME_STRATEGY = 'GAME_STRATEGY'
-    GAME_TRIVIA = 'GAME_TRIVIA'
-    GAME_WORD = 'GAME_WORD'
-    FAMILY = 'FAMILY'
-    FAMILY_ACTION = 'FAMILY_ACTION'
-    FAMILY_BRAINGAMES = 'FAMILY_BRAINGAMES'
-    FAMILY_CREATE = 'FAMILY_CREATE'
-    FAMILY_EDUCATION = 'FAMILY_EDUCATION'
-    FAMILY_MUSICVIDEO = 'FAMILY_MUSICVIDEO'
-    FAMILY_PRETEND = 'FAMILY_PRETEND'
+    details = thread2.result
+    rank += details
+    Excel_Utility.write_content(path, "rank", rank, app_names, all_reviews)

@@ -3,6 +3,7 @@
 import re
 
 
+# 从 words.text 文件中获取需要排除的单词
 def get_exclude_words():
     file = open('words.txt', "r+", 1024, "utf-8")
     content = ''
@@ -11,7 +12,6 @@ def get_exclude_words():
     words = content.split(" ")
     # 去重
     words_set = list(dict.fromkeys(words))
-    print("需要去除的词语", words_set)
     return words_set
 
 
@@ -19,7 +19,6 @@ def find_keyword(find_string):
     # 去重
     find_works = find_string.split(" ")
     find_works = list(dict.fromkeys(find_works))
-    print("需要查找的词语", find_works)
     # 获取需要去除的词语
     exclude_words = get_exclude_words()
 
@@ -28,7 +27,7 @@ def find_keyword(find_string):
     for find_word in find_works:
         # 只匹配字母
         word = re.sub(r'\W*', '', find_word)
-        if word is not '':
+        if word != '':
             result_words.append(word)
             for exclude_word in exclude_words:
                 if exclude_word.lower() == word.lower() or exclude_word.lower() is word.lower():
@@ -36,5 +35,4 @@ def find_keyword(find_string):
                     break
                 else:
                     continue
-    print("最终剩下的词语", len(result_words), result_words)
     return result_words
