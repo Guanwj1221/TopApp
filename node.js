@@ -1,10 +1,9 @@
 var store = require('app-store-scraper');
-
-store.reviews({
-  appId: 'com.oceanwing.soundcore',
-  country: 'it',
-  lang: 'pt',
-  num: 50
-})
-.then(console.log)
-.catch(console.log);
+var fs = require("fs")
+fs.exists('/etc/passwd123', (exists) => {
+  console.log(exists ? '存在' : '不存在');
+  if (!exists) {
+    return
+  }
+  console.log(123123)
+});

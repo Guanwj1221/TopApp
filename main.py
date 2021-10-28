@@ -85,32 +85,31 @@ class Application(tkinter.Frame):
         self.apple_store_sort_box_list = ttk.Combobox(master=master, textvariable=self.apple_store_sort_value)
         self.apple_store_sort_box_list.place(x=220, y=130)
 
-        self.term_label = ttk.Label(master, text='Or Use Keywords')
-        self.term_label.place(x=140, y=160)
+        self.term_label = ttk.Label(master, text='Search by keywords（The above parameters will not be valid）')
+        self.term_label.place(x=10, y=160)
         self.term_value = tkinter.StringVar()
-        self.term_value.set('Soundcore')
         self.term_input = ttk.Entry(master, textvariable=self.term_value)
-        self.term_input.place(x=140, y=180)
+        self.term_input.place(x=10, y=180)
 
         self.num_label = ttk.Label(master, text='Number of apps（Max 200）')
         self.num_label.place(x=10, y=210)
         self.num_value = tkinter.StringVar()
-        self.num_value.set(3)
+        self.num_value.set(200)
         self.num_input = ttk.Entry(master, textvariable=self.num_value)
         self.num_input.place(x=10, y=230)
 
-        self.country_label = ttk.Label(master, text='Country code（Like "us" or "us cn fr..."）')
-        self.country_label.place(x=220, y=260)
+        self.country_label = ttk.Label(master, text='Country code（Like "us" or "us cn fr..."）, separated by spaces')
+        self.country_label.place(x=10, y=260)
         self.country_value = tkinter.StringVar()
-        self.country_value.set('us cn kr')
+        self.country_value.set('us')
         self.country_input = ttk.Entry(master, textvariable=self.country_value)
-        self.country_input.place(x=220, y=280)
+        self.country_input.place(x=10, y=280)
 
         self.count_label = ttk.Label(master, text='Number of comments'
                                                   '（Google Play max 5000, Apple Store max 500）')
         self.count_label.place(x=10, y=310)
         self.count_value = tkinter.StringVar()
-        self.count_value.set(50)
+        self.count_value.set(500)
         self.count_input = ttk.Entry(master, textvariable=self.count_value)
         self.count_input.place(x=10, y=330)
 
@@ -225,6 +224,8 @@ def rank(google_play_category='', google_play_collection='', google_play_sort=''
          apple_store_category_name='', apple_store_category='',
          apple_store_collection_name='', apple_store_collection='', apple_store_sort='',
          app_num=100, lang='en', country_array=['us'], review_num=500):
+    # 获取数据开始的时间
+    start_time = time.time()
     for country in country_array:
         thread_1 = threading.Thread(
             target=get_google_play_data,
@@ -241,25 +242,21 @@ def rank(google_play_category='', google_play_collection='', google_play_sort=''
         thread_1.join()
         thread_2.join()
     delete_google_json_data()
-    print('finish')
+    print('Search end, Time-consuming %d' % (time.time() - start_time), "s")
 
 
 # 获取Google Play的数据
 def get_google_play_data(category, collection, app_num, lang, country, sort, review_num):
-    start_time = time.time()
     google_play_excel_name = country + '_' + category + '_' + collection + '_google_play.xlsx'
     google_play_path = os.path.join(Scraper_API.google_play_dir_path, google_play_excel_name)
     Scraper_API.save_app_list_ranking_reviews(
         Scraper_API.Platform.Google_Play.value, google_play_path,
         category, collection, app_num, lang, country, sort, review_num)
-    print('Google play search end, Time-consuming %d' % (time.time() - start_time), "s")
 
 
 # 获取App Store的数据
 def get_app_store_data(category_name, category, collection_name, collection,
                        app_num, lang, country, sort, review_num):
-    # 获取App Store的数据开始的时间
-    start_time = time.time()
 
     # 获取Excel表格名称
     apple_store_excel_name = country + '_' + category_name + '_' + collection_name + '_app_store.xlsx'
@@ -268,10 +265,10 @@ def get_app_store_data(category_name, category, collection_name, collection,
     Scraper_API.save_app_list_ranking_reviews(
         Scraper_API.Platform.Apple_Store.value, apple_store_path,
         category, collection, app_num, lang, country, sort, review_num)
-    print('Apple store search end, Time-consuming %d' % (time.time() - start_time), "s")
 
 
 def search(term, google_play_sort, apple_store_sort, app_num, reviews_num, lang='en', country_array=['us']):
+    start_time = time.time()
     for country in country_array:
         thread1 = Thread_Utility.MyThread(apple_store_search,
                                           (term, apple_store_sort, app_num, reviews_num, lang, country, country_array))
@@ -282,28 +279,25 @@ def search(term, google_play_sort, apple_store_sort, app_num, reviews_num, lang=
         thread1.join()
         thread2.join()
     delete_google_json_data()
-    print('finish')
+    print('Search end, Time-consuming %d' % (time.time() - start_time), "s")
 
 
 def apple_store_search(term, sort, app_num, reviews_num, lang, country, country_array):
-    start_time = time.time()
+
     apple_store_excel_name = country + '_' + term + '_apple_store.xlsx'
     apple_store_path = os.path.join(Scraper_API.apple_store_dir_path, apple_store_excel_name)
     Scraper_API.save_search_app_ranking_reviews(
         Scraper_API.Platform.Apple_Store.value, apple_store_path, term, sort, app_num,
         reviews_num, lang, country, country_array)
-    print('Apple store search end, Time-consuming %d' % (time.time() - start_time), "s")
 
 
 def google_play_search(term, sort, app_num, reviews_num, lang, country, country_array):
-    start_time = time.time()
     google_play_excel_name = country + '_' + term + '_google_play.xlsx'
     google_play_path = os.path.join(Scraper_API.google_play_dir_path, google_play_excel_name)
 
     Scraper_API.save_search_app_ranking_reviews(
         Scraper_API.Platform.Google_Play.value, google_play_path, term, sort, app_num,
         reviews_num, lang, country, country_array)
-    print('Google play search end, Time-consuming %d' % (time.time() - start_time), "s")
 
 
 if __name__ == '__main__':

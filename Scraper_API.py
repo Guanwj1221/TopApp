@@ -48,6 +48,8 @@ def get_app_reviews_json(platform, app_id, lang, country, sort, num):
         var page = num / 50
         if (page > 10)
             page = 10
+        if (page < 1)
+            page = 1
         if (platform === 'apple_store')
         {
             gplay = require('app-store-scraper')
@@ -92,7 +94,6 @@ def get_app_reviews_json(platform, app_id, lang, country, sort, num):
     except:
         return ''
     json_data = get_json_result(file_name=file_name)
-    print('--->reviews', json_data)
     return json_data
 
 
@@ -311,12 +312,10 @@ def get_app_reviews(platform, app_id, lang, country_array, sort, num):
         tem_lang = lang
         if platform == Platform.Google_Play.value:
             for name, member in CountyLangCode.__members__.items():
-                print('name == str(country).upper()', name == str(country).upper())
                 if name == str(country).upper():
                     tem_lang = member.value
                     break
         json_data = get_app_reviews_json(platform, app_id, tem_lang, country, sort, num)
-        print('--->', platform, app_id, tem_lang, country, sort, num, json_data)
         if json_data == '':
             continue
         try:
@@ -380,8 +379,6 @@ def save_app_list_ranking_reviews(platform, path, category, collection,
     print(platform, "Getting data...")
     complete_app, app_reviews = Thread_Utility.get_all_app_reviews(
         get_app_reviews, platform, app_ids, lang, [country], sort, reviews_num)
-    print(complete_app)
-    print(app_reviews)
     sheet_names = []
     for i in range(len(complete_app)):
         index = app_ids.index(complete_app[i])
@@ -392,10 +389,10 @@ def save_app_list_ranking_reviews(platform, path, category, collection,
 
     app_rank_name = []
     for index in range(len(app_names)):
-        app_rank_name.append(str(index + 1) + '_' + sheet_names[index])
+        app_rank_name.append(sheet_names[index])
 
     print(platform, "Loading data...")
-    Excel_Utility.write_content(path, 'AllAppRanking', contents, app_rank_name, app_reviews)
+    Excel_Utility.write_content(path, 'Rank', contents, app_rank_name, app_reviews)
 
 
 # 讲搜索的App信息写入表格
@@ -429,8 +426,6 @@ def save_search_app_ranking_reviews(platform, path, term, sort, app_num, reviews
     thread1.join()
     thread2.join()
     complete_app, all_reviews = thread1.result
-    print(complete_app)
-    print(all_reviews)
     sheet_names = []
     for i in range(len(complete_app)):
         index = app_ids.index(complete_app[i])
@@ -438,7 +433,7 @@ def save_search_app_ranking_reviews(platform, path, term, sort, app_num, reviews
 
     details = thread2.result
     rank += details
-    Excel_Utility.write_content(path, "rank", rank, sheet_names, all_reviews)
+    Excel_Utility.write_content(path, "Rank", rank, sheet_names, all_reviews)
 
 
 class Platform(Enum):
