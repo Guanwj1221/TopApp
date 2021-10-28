@@ -3,11 +3,10 @@
 import urllib.request
 import ssl
 import json
-import Excel_Utility
+from other import Excel_Utility
 import Thread_Utility
 from urllib.parse import quote
 import string
-from mtranslate import translate
 
 apple_store_dir_path = 'AppStore'
 app_ids = []

@@ -5,11 +5,9 @@ import time
 import os
 # pip install PyExecJS
 import execjs
-from enum import Enum
 import Keyword_Utility
-import Excel_Utility
+from other import Excel_Utility
 import Thread_Utility
-from mtranslate import translate
 
 google_play_json_dir_path = 'GooglePlay/JsonData'
 google_play_dir_path = 'GooglePlay'
