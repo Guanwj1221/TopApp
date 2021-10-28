@@ -4,9 +4,8 @@ import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
-# 创建一个线程类
 class MyThread(threading.Thread):
-    def __init__(self, func, args):
+    def __init__(self, func, args) -> object:
         super(MyThread, self).__init__()
         self.result = ''
         self.func = func
@@ -22,18 +21,39 @@ class MyThread(threading.Thread):
             return None
 
 
-def get_google_play_reviews(func, app_ids, lang, country, sort, review_num):
+def get_all_app_reviews(func, system, app_ids, lang, country, sort, review_num):
+    contents = []
+    complete_app = []
+    all_task = []
+    num = 0
+    executor = ThreadPoolExecutor(max_workers=10)
+    for app_id in app_ids:
+        task = executor.submit(func, system, app_id, lang, country, sort, review_num)
+        all_task.append(task)
+    for future in as_completed(all_task):
+        app_id, data = future.result()
+        contents.append(data)
+        complete_app.append(app_id)
+        num += 1
+        per = num / len(app_ids) * 100
+        print(system, "Get reviews data：%.2f" % per, '%')
+    return complete_app, contents
+
+
+def get_all_app_details(func, system, app_ids, lang, country):
     contents = []
     all_task = []
     num = 0
-    executor = ThreadPoolExecutor(max_workers=20)
+    executor = ThreadPoolExecutor(max_workers=10)
     for app_id in app_ids:
-        task = executor.submit(func, app_id, lang, country, sort, review_num)
+        task = executor.submit(func, system, app_id, lang, country)
         all_task.append(task)
     for future in as_completed(all_task):
         data = future.result()
         contents.append(data)
         num += 1
         per = num / len(app_ids) * 100
-        print("获取Google play 评论数据进度：%.2f" % per, '%')
+        print(system, "Get details data：%.2f" % per, '%')
     return contents
+
+

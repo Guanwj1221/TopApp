@@ -55,7 +55,9 @@ def write_content(path, ranking_sheet_name,
             sheet = workbook[workbook.sheetnames[0]]
             workbook.remove(sheet)
     except:
+        print(path, "Write fail")
         pass
+    print(path, "Write success")
     workbook.save(path)
     workbook.close()
 

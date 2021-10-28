@@ -1,183 +1,216 @@
 import os
-import Google_Play_API
-import Excel_Utility
-import Apple_Store_API
 import time
 import threading
 import tkinter
-from tkinter import *
 from tkinter import ttk
 
+import Thread_Utility
 
 # GUI
+import Scraper_API
+
+
 class Application(tkinter.Frame):
     def __init__(self, master=None, **kw):
         super().__init__(master, **kw)
-        self.category_name = []
-        self.category_member = []
-        self.collection_name = []
-        self.collection_member = []
-        self.sort_name = []
-        self.sort_member = []
+        self.google_play_category_name = []
+        self.google_play_category_member = []
+        self.google_play_collection_name = []
+        self.google_play_collection_member = []
+        self.google_play_sort_name = []
+        self.google_play_sort_member = []
+
+        self.apple_store_category_name = []
+        self.apple_store_category_member = []
+        self.apple_store_collection_name = []
+        self.apple_store_collection_member = []
+        self.apple_store_sort_name = []
+        self.apple_store_sort_member = []
         self.master = master
         master.title("TopApp")
-        master.geometry('480x580')
+
+        # 创建主窗口
+        system_width = master.winfo_screenwidth()
+        system_height = master.winfo_screenheight()
+        window_width = 480
+        window_height = 440
+        x = (system_width - window_width) / 2
+        y = (system_height - window_height) / 2
+        master.geometry('%dx%d+%d+%d' % (window_width, window_height, x, y))
         self.pack()
 
-        self.category_label = Label(master, text='选择类型')
-        self.category_label.place(x=10, y=10)
+        self.google_play_category_label = ttk.Label(master, text='Google Play Category')
+        self.google_play_category_label.place(x=10, y=10)
 
-        self.category_value = tkinter.StringVar()
-        self.category_box_list = ttk.Combobox(master=master, textvariable=self.category_value)
-        self.category_box_list.place(x=200, y=10)
+        self.google_play_category_value = tkinter.StringVar()
+        self.google_play_category_box_list = ttk.Combobox(master=master,
+                                                          textvariable=self.google_play_category_value)
+        self.google_play_category_box_list.place(x=10, y=30)
 
-        self.collection_label = Label(master, text='选择榜单')
-        self.collection_label.place(x=10, y=50)
+        self.apple_store_category_label = ttk.Label(master, text='Apple Store Category')
+        self.apple_store_category_label.place(x=220, y=10)
 
-        self.collection_value = tkinter.StringVar()
-        self.collection_box_list = ttk.Combobox(master=master, textvariable=self.collection_value)
-        self.collection_box_list.place(x=200, y=50)
+        self.apple_store_category_value = tkinter.StringVar()
+        self.apple_store_category_box_list = ttk.Combobox(master=master,
+                                                          textvariable=self.apple_store_category_value)
+        self.apple_store_category_box_list.place(x=220, y=30)
 
-        self.sort_label = Label(master, text='评论排序')
-        self.sort_label.place(x=10, y=90)
+        self.google_play_collection_label = ttk.Label(master, text='Google Play Collection')
+        self.google_play_collection_label.place(x=10, y=60)
 
-        self.sort_value = tkinter.StringVar()
-        self.sort_box_list = ttk.Combobox(master=master, textvariable=self.sort_value)
-        self.sort_box_list.place(x=200, y=90)
+        self.google_play_collection_value = tkinter.StringVar()
+        self.google_play_collection_box_list = ttk.Combobox(master=master,
+                                                            textvariable=self.google_play_collection_value)
+        self.google_play_collection_box_list.place(x=10, y=80)
 
-        self.term_label = Label(master, text='查找APP的关键词')
-        self.term_label.place(x=10, y=130)
+        self.apple_store_collection_label = ttk.Label(master, text='Apple Store Collection')
+        self.apple_store_collection_label.place(x=220, y=60)
+
+        self.apple_store_collection_value = tkinter.StringVar()
+        self.apple_store_collection_box_list = ttk.Combobox(master=master,
+                                                            textvariable=self.apple_store_collection_value)
+        self.apple_store_collection_box_list.place(x=220, y=80)
+
+        self.google_play_sort_label = ttk.Label(master, text='Google Play Sort')
+        self.google_play_sort_label.place(x=10, y=110)
+
+        self.google_play_sort_value = tkinter.StringVar()
+        self.google_play_sort_box_list = ttk.Combobox(master=master, textvariable=self.google_play_sort_value)
+        self.google_play_sort_box_list.place(x=10, y=130)
+
+        self.apple_store_sort_label = ttk.Label(master, text='Apple Store Sort')
+        self.apple_store_sort_label.place(x=220, y=110)
+
+        self.apple_store_sort_value = tkinter.StringVar()
+        self.apple_store_sort_box_list = ttk.Combobox(master=master, textvariable=self.apple_store_sort_value)
+        self.apple_store_sort_box_list.place(x=220, y=130)
+
+        self.term_label = ttk.Label(master, text='Or Use Keywords')
+        self.term_label.place(x=140, y=160)
         self.term_value = tkinter.StringVar()
-        self.term_input = Entry(master, textvariable=self.term_value)
-        self.term_input.place(x=200, y=130)
+        self.term_value.set('Soundcore')
+        self.term_input = ttk.Entry(master, textvariable=self.term_value)
+        self.term_input.place(x=140, y=180)
 
-        self.num_label = Label(master, text='输入App数量(max 200)')
-        self.num_label.place(x=10, y=170)
+        self.num_label = ttk.Label(master, text='Number of apps（Max 200）')
+        self.num_label.place(x=10, y=210)
         self.num_value = tkinter.StringVar()
-        self.num_value.set(100)
-        self.num_input = Entry(master, textvariable=self.num_value)
-        self.num_input.place(x=200, y=170)
+        self.num_value.set(3)
+        self.num_input = ttk.Entry(master, textvariable=self.num_value)
+        self.num_input.place(x=10, y=230)
 
-        self.lang_label = Label(master, text='输入语言代码')
-        self.lang_label.place(x=10, y=210)
-        self.lang_value = tkinter.StringVar()
-        self.lang_value.set('en')
-        self.lang_input = Entry(master, textvariable=self.lang_value)
-        self.lang_input.place(x=200, y=210)
-
-        self.country_label = Label(master, text='输入国家代码')
-        self.country_label.place(x=10, y=250)
+        self.country_label = ttk.Label(master, text='Country code（Like "us" or "us cn fr..."）')
+        self.country_label.place(x=220, y=260)
         self.country_value = tkinter.StringVar()
-        self.country_value.set('us')
-        self.country_input = Entry(master, textvariable=self.country_value)
-        self.country_input.place(x=200, y=250)
+        self.country_value.set('us cn kr')
+        self.country_input = ttk.Entry(master, textvariable=self.country_value)
+        self.country_input.place(x=220, y=280)
 
-        self.count_label = Label(master, text='输入评论数量(max 5000)')
-        self.count_label.place(x=10, y=290)
+        self.count_label = ttk.Label(master, text='Number of comments'
+                                                  '（Google Play max 5000, Apple Store max 500）')
+        self.count_label.place(x=10, y=310)
         self.count_value = tkinter.StringVar()
-        self.count_value.set(500)
-        self.count_input = Entry(master, textvariable=self.count_value)
-        self.count_input.place(x=200, y=290)
+        self.count_value.set(50)
+        self.count_input = ttk.Entry(master, textvariable=self.count_value)
+        self.count_input.place(x=10, y=330)
 
-        self.alertButton = Button(master, text='开始', command=self.start)
-        self.alertButton.place(x=195, y=330)
+        self.alertButton = ttk.Button(master, text='Submit', command=self.start)
+        self.alertButton.place(x=180, y=380)
         self.init_window()
 
     def init_window(self):
-        for name, member in Google_Play_API.Category.__members__.items():
-            self.category_name.append(name.title().replace('_', ' '))
-            self.category_member.append(member.value)
+        for name, member in Scraper_API.GooglePlayCategory.__members__.items():
+            self.google_play_category_name.append(name.title().replace('_', ' '))
+            self.google_play_category_member.append(member.value)
 
-        for name, member in Google_Play_API.Collection.__members__.items():
-            self.collection_name.append(name.title().replace('_', ' '))
-            self.collection_member.append(member.value)
+        for name, member in Scraper_API.AppleStoreCategory.__members__.items():
+            self.apple_store_category_name.append(name.title().replace('_', ' '))
+            self.apple_store_category_member.append(member.value)
 
-        for name, member in Google_Play_API.Sort.__members__.items():
-            self.sort_name.append(name.title().replace('_', ' '))
-            self.sort_member.append(member.value)
+        for name, member in Scraper_API.GooglePlayCollection.__members__.items():
+            self.google_play_collection_name.append(name.title().replace('_', ' '))
+            self.google_play_collection_member.append(member.value)
 
-        # self.category_label.pack()
-        self.category_box_list['value'] = self.category_name
-        self.category_box_list.current(0)
-        # self.category_box_list.pack()
+        for name, member in Scraper_API.AppleStoreCollection.__members__.items():
+            self.apple_store_collection_name.append(name.title().replace('_', ' '))
+            self.apple_store_collection_member.append(member.value)
 
-        # self.collection_label.pack()
-        self.collection_box_list['value'] = self.collection_name
-        self.collection_box_list.current(0)
-        # self.collection_box_list.pack()
+        for name, member in Scraper_API.GooglePlaySort.__members__.items():
+            self.google_play_sort_name.append(name.title().replace('_', ' '))
+            self.google_play_sort_member.append(member.value)
 
-        # self.sort_label.pack()
-        self.sort_box_list['value'] = self.sort_name
-        self.sort_box_list.current(0)
-        # self.sort_box_list.pack()
+        for name, member in Scraper_API.AppleStoreSort.__members__.items():
+            self.apple_store_sort_name.append(name.title().replace('_', ' '))
+            self.apple_store_sort_member.append(member.value)
 
-        # self.term_label.pack()
-        # self.term_input.pack()
-        #
-        # self.num_label.pack()
-        # self.num_input.pack()
-        #
-        # self.lang_label.pack()
-        # self.lang_input.pack()
-        #
-        # self.country_label.pack()
-        # self.country_input.pack()
-        #
-        # self.count_label.pack()
-        # self.count_input.pack()
+        self.google_play_category_box_list['value'] = self.google_play_category_name
+        self.google_play_category_box_list.current(0)
 
-        # self.score_label.pack()
-        # self.score_input.pack()
+        self.apple_store_category_box_list['value'] = self.apple_store_category_name
+        self.apple_store_category_box_list.current(0)
 
-        # self.alertButton.pack()
+        self.google_play_collection_box_list['value'] = self.google_play_collection_name
+        self.google_play_collection_box_list.current(0)
+
+        self.apple_store_collection_box_list['value'] = self.apple_store_collection_name
+        self.apple_store_collection_box_list.current(0)
+
+        self.google_play_sort_box_list['value'] = self.google_play_sort_name
+        self.google_play_sort_box_list.current(0)
+
+        self.apple_store_sort_box_list['value'] = self.apple_store_sort_name
+        self.apple_store_sort_box_list.current(0)
 
     def start(self):
-        category = self.category_box_list.current() or 0
-        collection = self.collection_box_list.current() or 0
-        sort = self.sort_box_list.current() or 0
+        google_play_category = self.google_play_category_box_list.current() or 0
+        google_play_collection = self.google_play_collection_box_list.current() or 0
+        google_play_sort = self.google_play_sort_box_list.current() or 0
+
+        apple_store_category = self.apple_store_category_box_list.current() or 0
+        apple_store_collection = self.apple_store_collection_box_list.current() or 0
+        apple_store_sort = self.apple_store_sort_box_list.current() or 0
 
         term = self.term_input.get()
         app_num = self.num_input.get() or 100
 
         country = self.country_input.get() or 'us'
-        lang = self.lang_input.get() or 'en'
-        review_num = self.count_input.get() or 500
+        lang = 'en'
+        reviews_num = self.count_input.get() or 500
 
+        make_dir()
+        country_array = country.split(' ')
         if term is None or term == "":
-            rank(self.category_member[category], self.collection_member[collection],
-                 app_num, lang, country, self.sort_member[sort], review_num)
+            rank(self.google_play_category_member[google_play_category],
+                 self.google_play_collection_member[google_play_collection],
+                 self.google_play_sort_member[google_play_sort],
+                 self.apple_store_category_name[apple_store_category],
+                 self.apple_store_category_member[apple_store_category],
+                 self.apple_store_collection_name[apple_store_collection],
+                 self.apple_store_collection_member[apple_store_collection],
+                 self.apple_store_sort_member[apple_store_sort],
+                 app_num, lang, country_array, reviews_num)
         else:
-            search(term, self.sort_member[sort], review_num, lang, country)
+            search(term, self.google_play_sort_member[google_play_sort],
+                   self.apple_store_sort_member[apple_store_sort],
+                   app_num, reviews_num, lang, country_array)
 
 
-# 获取Google Play的数据
-def get_google_play_data(category, collection, app_num, lang, country, sort, review_num):
-    start_time = time.time()
-    google_play_dir_path = 'GooglePlay'
-    if not os.path.exists(google_play_dir_path):
-        os.system('mkdir ' + google_play_dir_path)
-    reviews_path = os.path.join(google_play_dir_path, 'JsonData')
-    if not os.path.exists(reviews_path):
-        os.system('mkdir ' + reviews_path)
-    google_play_excel_name = category + '_' + collection + '_google_play.xlsx'
-    google_play_path = os.path.join(google_play_dir_path, google_play_excel_name)
-    Google_Play_API.get_app_ranking_reviews(
-        google_play_path, category, collection, app_num, lang, country, sort, review_num)
-    os.system('rm -rf ' + reviews_path + '/*')
-    print('耗时%d' % (time.time() - start_time), "s")
+def delete_google_json_data():
+    os.system('rm -rf ' + Scraper_API.json_dir_path)
 
 
-# 获取App Store的数据
-def get_app_store_data(term, num, lang, country):
-    start_time = time.time()
-    apple_store_dir_path = 'AppStore'
-    if not os.path.exists(apple_store_dir_path):
-        os.system('mkdir ' + apple_store_dir_path)
-    apple_store_excel_name = term + '_app_store.xlsx'
-    apple_store_path = os.path.join(apple_store_dir_path, apple_store_excel_name)
+def make_dir():
+    # 创建JsonData文件夹
+    if not os.path.exists(Scraper_API.json_dir_path):
+        os.mkdir(Scraper_API.json_dir_path)
 
-    Apple_Store_API.write_ranking_in_excel(apple_store_path, term, num, lang, country)
-    print('耗时%d' % (time.time() - start_time), "s")
+    # 创建Google Play文件夹
+    if not os.path.exists(Scraper_API.google_play_dir_path):
+        os.mkdir(Scraper_API.google_play_dir_path)
+
+    # 创建AppStore文件夹
+    if not os.path.exists(Scraper_API.apple_store_dir_path):
+        os.mkdir(Scraper_API.apple_store_dir_path)
 
 
 # path: Excel表格名称
@@ -188,30 +221,89 @@ def get_app_store_data(term, num, lang, country):
 # country: 国家，默认为 'us'
 # sort: 排序方式，默认为 Sort.NEWEST
 # review_num: 评论数量
-def rank(category='', collection='', app_num=100, lang='en',
-         country='us', sort='', review_num=500):
-    thread_1 = threading.Thread(
-        target=get_google_play_data,
-        args=(category, collection, app_num, lang, country, sort, review_num,))
-    # thread_2 = threading.Thread(target=get_app_store_data, args=(term, num, lang, country,))
-    thread_1.start()
-    # thread_2.start()
+def rank(google_play_category='', google_play_collection='', google_play_sort='',
+         apple_store_category_name='', apple_store_category='',
+         apple_store_collection_name='', apple_store_collection='', apple_store_sort='',
+         app_num=100, lang='en', country_array=['us'], review_num=500):
+    for country in country_array:
+        thread_1 = threading.Thread(
+            target=get_google_play_data,
+            args=(
+                google_play_category,  google_play_collection,
+                app_num, lang, country, google_play_sort, review_num))
+        thread_2 = threading.Thread(
+            target=get_app_store_data,
+            args=(apple_store_category_name, apple_store_category,
+                  apple_store_collection_name, apple_store_collection,
+                  app_num, lang, country, apple_store_sort, review_num))
+        thread_1.start()
+        thread_2.start()
+        thread_1.join()
+        thread_2.join()
+    delete_google_json_data()
+    print('finish')
 
 
-def search(term, sort, num, lang='en', country='us'):
+# 获取Google Play的数据
+def get_google_play_data(category, collection, app_num, lang, country, sort, review_num):
     start_time = time.time()
-    content = Google_Play_API.get_app_reviews('com.intsig.camscanner', lang, country, sort, num)
-    print(content)
-    apple_store_dir_path = 'AppStore'
-    if not os.path.exists(apple_store_dir_path):
-        os.system('mkdir ' + apple_store_dir_path)
-    apple_store_excel_name = term + '_google_play.xlsx'
-    Excel_Utility.write_reviews(apple_store_excel_name, term, content)
-    print('耗时%d' % (time.time() - start_time), "s")
+    google_play_excel_name = country + '_' + category + '_' + collection + '_google_play.xlsx'
+    google_play_path = os.path.join(Scraper_API.google_play_dir_path, google_play_excel_name)
+    Scraper_API.save_app_list_ranking_reviews(
+        Scraper_API.Platform.Google_Play.value, google_play_path,
+        category, collection, app_num, lang, country, sort, review_num)
+    print('Google play search end, Time-consuming %d' % (time.time() - start_time), "s")
 
-    # thread_2 = threading.Thread(target=get_app_store_data, args=(term, num, lang, country,))
-    # thread_1.start()
-    # thread_2.start()
+
+# 获取App Store的数据
+def get_app_store_data(category_name, category, collection_name, collection,
+                       app_num, lang, country, sort, review_num):
+    # 获取App Store的数据开始的时间
+    start_time = time.time()
+
+    # 获取Excel表格名称
+    apple_store_excel_name = country + '_' + category_name + '_' + collection_name + '_app_store.xlsx'
+    apple_store_path = os.path.join(Scraper_API.apple_store_dir_path, apple_store_excel_name)
+
+    Scraper_API.save_app_list_ranking_reviews(
+        Scraper_API.Platform.Apple_Store.value, apple_store_path,
+        category, collection, app_num, lang, country, sort, review_num)
+    print('Apple store search end, Time-consuming %d' % (time.time() - start_time), "s")
+
+
+def search(term, google_play_sort, apple_store_sort, app_num, reviews_num, lang='en', country_array=['us']):
+    for country in country_array:
+        thread1 = Thread_Utility.MyThread(apple_store_search,
+                                          (term, apple_store_sort, app_num, reviews_num, lang, country, country_array))
+        thread2 = Thread_Utility.MyThread(google_play_search,
+                                          (term, google_play_sort, app_num, reviews_num, lang, country, country_array))
+        thread1.start()
+        thread2.start()
+        thread1.join()
+        thread2.join()
+    delete_google_json_data()
+    print('finish')
+
+
+def apple_store_search(term, sort, app_num, reviews_num, lang, country, country_array):
+    start_time = time.time()
+    apple_store_excel_name = country + '_' + term + '_apple_store.xlsx'
+    apple_store_path = os.path.join(Scraper_API.apple_store_dir_path, apple_store_excel_name)
+    Scraper_API.save_search_app_ranking_reviews(
+        Scraper_API.Platform.Apple_Store.value, apple_store_path, term, sort, app_num,
+        reviews_num, lang, country, country_array)
+    print('Apple store search end, Time-consuming %d' % (time.time() - start_time), "s")
+
+
+def google_play_search(term, sort, app_num, reviews_num, lang, country, country_array):
+    start_time = time.time()
+    google_play_excel_name = country + '_' + term + '_google_play.xlsx'
+    google_play_path = os.path.join(Scraper_API.google_play_dir_path, google_play_excel_name)
+
+    Scraper_API.save_search_app_ranking_reviews(
+        Scraper_API.Platform.Google_Play.value, google_play_path, term, sort, app_num,
+        reviews_num, lang, country, country_array)
+    print('Google play search end, Time-consuming %d' % (time.time() - start_time), "s")
 
 
 if __name__ == '__main__':

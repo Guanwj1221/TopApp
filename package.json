@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "app-store-scraper": "^0.17.0",
+    "google-play-scraper": "^8.0.3"
+  }
+}
