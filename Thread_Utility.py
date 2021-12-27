@@ -36,7 +36,6 @@ def get_all_app_reviews(func, system, app_ids, lang, country, sort, review_num):
         complete_app.append(app_id)
         num += 1
         per = num / len(app_ids) * 100
-        print(system, ' ',  country, "Get reviews data：%.2f" % per, '%')
     return complete_app, contents
 
 
@@ -53,7 +52,6 @@ def get_all_app_details(func, system, app_ids, lang, country):
         contents.append(data)
         num += 1
         per = num / len(app_ids) * 100
-        print(system, ' ',  country, "Get details data：%.2f" % per, '%')
     return contents
 
 

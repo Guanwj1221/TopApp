@@ -17,12 +17,11 @@ apple_store_dir_path = 'AppleStore'
 # 判断获取json数据的结果
 def get_json_result(file_name):
     num = 0
-    file = file_name
     json_data = ""
     while num < 5:
         time.sleep(1)
-        if os.path.exists(file):
-            file_data = open(file)
+        if os.path.exists(file_name):
+            file_data = open(file_name)
             try:
                 json_data = json.load(file_data)
             except:
@@ -42,32 +41,49 @@ def get_json_result(file_name):
 # num: 评论数量
 def get_app_reviews_json(platform, app_id, lang, country, sort, num):
     ctx = execjs.compile("""
+    var count = 1
     var gplay = require('google-play-scraper')
     var fs = require("fs")
     function reviews(platform, app_id, lang, country, sort, num, file_name) {
         var page = num / 50
-        if (page > 10)
-            page = 10
         if (page < 1)
             page = 1
         if (platform === 'apple_store')
         {
-            gplay = require('app-store-scraper')
-            gplay.reviews({
-            appId: app_id,
-            lang: lang,
-            country: country,
-            sort: sort,
-            num: num,
-            page: page
-            })
-            .then((body) => {
-                fs.writeFile(file_name, JSON.stringify(body), (err) => {
-                    if (err) {
-                        console.error(err)
+            for (var i = 1; i <= page; i++) {
+                gplay = require('app-store-scraper')
+                gplay.reviews({
+                appId: app_id,
+                country: country,
+                sort: sort,
+                page: i
+                })
+                .then((body) => {
+                    let test_name = file_name.slice(0, file_name.length - 5) + "_test.json"
+                    if ("[]" !== JSON.stringify(body)) {
+                        fs.writeFile(test_name, JSON.stringify(body), {flag: 'a'}, (err) => {
+                            if (err) {
+                                console.error(err)
+                            }
+                        })
+                    }
+                    count += 1
+                    if (count === page) {
+                        fs.readFile(test_name, "utf8", function (err, data) {
+                            let new_data = data.replaceAll('][', ', ')
+                            if (err) {
+                                console.log(err);
+                            } else {
+                                fs.writeFile(file_name, new_data, (err) => {
+                                    if (err) {
+                                        console.error(err)
+                                    }
+                                })
+                            }
+                        })
                     }
                 })
-            })
+            }
         }
         else
         {

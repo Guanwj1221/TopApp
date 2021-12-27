@@ -139,7 +139,7 @@ def get_app_reviews(app_id, lang, country, num):
 
 # 将评论写进excel
 def get_reviews(lang, country, num):
-    reviews = Thread_Utility.get_apple_store_reviews(get_app_reviews, app_ids, lang, country, num)
+    reviews = Thread_Utility.get_all_app_reviews(get_app_reviews, app_ids, lang, country, num)
     return reviews
 
 
